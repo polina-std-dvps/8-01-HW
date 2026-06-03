@@ -24,7 +24,7 @@
 
 ### Задание 1
 
-[Первое задание](https://github.com/netology-code/sys-pattern-homework/commit/28e26a79192879d9353e9004047448351109ca66)
+[Первое задание - коммит](https://github.com/netology-code/sys-pattern-homework/commit/28e26a79192879d9353e9004047448351109ca66)
 
 ![Скрин к 1му заданию](https://github.com/polina-std-dvps/8-01-HW/blob/main/1stTask.png)
 
@@ -34,13 +34,13 @@
 
 ### Задание 2
 
-[Второе задание]https://github.com/netology-code/sys-pattern-homework/commit/9e0a579a1bc80b31d1371d8811492d88af5d99f3
+[Второе задание - коммит](https://github.com/netology-code/sys-pattern-homework/commit/9e0a579a1bc80b31d1371d8811492d88af5d99f3)
 
 
 ---
 
 ### Задание 3
 
-[График с dev-веткой]https://github.com/polina-std-dvps/8-01-HW/network
+[График с dev-веткой](https://github.com/polina-std-dvps/8-01-HW/network)
 
 ![Скрин к 3му заданию](https://github.com/polina-std-dvps/8-01-HW/blob/main/3dTask.png)
