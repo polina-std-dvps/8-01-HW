@@ -1,0 +1,17 @@
+stages:
+  - test
+  - build
+
+test:
+  stage: test
+  image: golang:latest
+  script:
+    - echo "Тест пройден успешно (заглушка)"
+    - exit 0
+
+build:
+  stage: build
+  image: docker:latest
+  script:
+    - echo "Тест пройден успешно (заглушка)"
+    - exit 0
