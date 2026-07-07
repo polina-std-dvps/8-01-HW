@@ -30,7 +30,7 @@
 
 ### Задание 3
 
-![Скрин к 2му-3му заданию](https://github.com/polina-std-dvps/8-01-HW/blob/main/3dTask.pnghttps://github.com/polina-std-dvps/8-01-HW/blob/main/Zabbix_HW2/Задание2-3.png)
+![Скрин к 2му-3му заданию](https://github.com/polina-std-dvps/8-01-HW/blob/main/Zabbix_HW2/Задание2-3.png)
 
 ### Задание 4
 
