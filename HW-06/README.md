@@ -28,7 +28,7 @@
 
 ![Скрин к 1му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/задание_1_stat.png)
 
-![Конфигурация HAProxy](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/haproxy.cfg)
+[Конфигурация HAProxy к заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/haproxy1.cfg)
 
 ---
 
@@ -40,3 +40,5 @@
 ![Скрин к 2му заданию 3](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/Задание_2.3.png)
 
 ![Скрин к 2му заданию 4](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/Задание_2_stat.png)
+
+[Конфигурация HAProxy к заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/haproxy2.cfg)
