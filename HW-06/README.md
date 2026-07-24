@@ -34,7 +34,6 @@
 
 ### Задание 2
 
-![Скрин к 2му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/Задание_2.1.png)
 
 ![Скрин к 2му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-06/Задание_2.2.png)
 
