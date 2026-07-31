@@ -30,4 +30,4 @@
 
 ![Скрин к 1му заданию 3](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/nginx.png)
 
-[Terraform Playbook](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/main.tf)
+![Terraform Playbook](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/main.tf)
