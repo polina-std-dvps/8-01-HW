@@ -24,10 +24,10 @@
 
 ### Задание 1
 
-![Скрин к 1му заданию 1]()
+![Скрин к 1му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/img1.png)
 
-![Скрин к 1му заданию 2]()
+![Скрин к 1му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/img2.png)
 
-![Скрин к 1му заданию 3]()
+![Скрин к 1му заданию 3](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/nginx.png)
 
-[Terraform Playbook]()
+[Terraform Playbook](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-07/main.tf)
