@@ -36,21 +36,21 @@
 
 ### Задание 2
 
-![Скрин к 2му заданию 1]()
+![Скрин к 2му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-09/task_1.1.png)
 
-![Скрин к 2му заданию 2]()
+![Скрин к 2му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-09/task_1.png)
 
 ---
 
 ### Задание 3
 
-![Скрин к 3му заданию 1]()
+![Скрин к 3му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-09/task_2.png)
 
 ---
 
 ### Задание 4
 
-![Скрин к 4му заданию 1]()
+![Скрин к 4му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-09/task_3.png)
 
 
 
