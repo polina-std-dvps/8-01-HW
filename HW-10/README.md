@@ -24,27 +24,27 @@
 
 ### Задание 1
 
-![Скрин к 1му заданию 1]()
+![Скрин к 1му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-10/task_1.png)
 
 ---
 
 ### Задание 2
 
-![Скрин к 2му заданию 1]()
+![Скрин к 2му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-10/task_2.png)
 
 ---
 
 ### Задание 3
 
-![Скрин к 3му заданию 1]()
+![Скрин к 3му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-10/task_3.2.png)
 
-![Скрин к 3му заданию 2]()
+![Скрин к 3му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-10/task_3.png)
 
 ---
 
 ### Задание 4
 
-![Скрин к 4му заданию 1]()
+![Скрин к 4му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-10/task_4.2.png)
 
-![Скрин к 4му заданию 2]()
+![Скрин к 4му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-10/task_4.png)
 
