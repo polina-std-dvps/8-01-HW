@@ -24,35 +24,35 @@
 
 ### Задание 1
 
-![Скрин к 1му заданию 1]()
+![Скрин к 1му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_1.png)
 
 ---
 
 ### Задание 2
 
-![Скрин к 2му заданию 1]()
+![Скрин к 2му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_2.0.png)
 
-![Скрин к 2му заданию 2]()
+![Скрин к 2му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_2.1.png)
 
-![Скрин к 2му заданию 3]()
+![Скрин к 2му заданию 3](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_2.2.png)
 
 ---
 
 ### Задание 3
 
-![Скрин к 3му заданию 1]()
+![Скрин к 3му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.0.png)
 
-![Скрин к 3му заданию 2]()
+![Скрин к 3му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.1.png)
 
-![Скрин к 3му заданию 3]()
+![Скрин к 3му заданию 3](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.2.png)
 
-![Скрин к 3му заданию 4]()
+![Скрин к 3му заданию 4](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.3.png)
 
-![Скрин к 3му заданию 5]()
+![Скрин к 3му заданию 5](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.4.png)
 
-![Скрин к 3му заданию 6]()
+![Скрин к 3му заданию 6](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.5.png)
 
-![Скрин к 3му заданию 7]()
+![Скрин к 3му заданию 7](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.6.png)
 
-![Скрин к 3му заданию 8]()
+![Скрин к 3му заданию 8](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-11/task_3.7.png)
 
