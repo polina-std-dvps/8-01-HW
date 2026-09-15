@@ -24,15 +24,15 @@
 
 ### Задание 1
 
-![Скрин к 1му заданию 1]()
+![Скрин к 1му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-12/task_1.png)
 
-![Скрин к 1му заданию 2]()
+![Скрин к 1му заданию 2](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-12/task_1.2.png)
 
-![Скрин к 1му заданию 3]()
+![Скрин к 1му заданию 3](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-12/task_1.3.png)
 ---
 
 ### Задание 2
 
-![Скрин к 2му заданию 1]()
+![Скрин к 2му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-12/task_2.png)
 
 ---
