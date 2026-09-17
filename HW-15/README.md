@@ -24,7 +24,7 @@
 
 ### Задание 1
 
-![Скрин к 1му заданию 1]()
+![Скрин к 1му заданию 1](https://github.com/polina-std-dvps/8-01-HW/blob/main/HW-15/task_1.png)
 
 ### Задание 2
 
