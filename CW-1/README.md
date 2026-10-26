@@ -38,9 +38,8 @@
 (backend `:80`, healthcheck `GET /`) → `yandex_alb_http_router` → `yandex_alb_virtual_host`
 → `yandex_alb_load_balancer` (listener `:80`, type auto, 2 зоны).
 
-- Проверка через Application Load Balancer (`51.250.9.248`):
-
-![curl через ALB](alb_curl.png)
+- Проверка через Application Load Balancer (`51.250.9.248`): 6 запросов, все `200 OK`
+(сайт «My Infrastructure Website» отдаётся с обеих ВМ; NLB fallback `46.243.210.252` — тоже 200, см. скрин ниже)
 
 ## 2. Мониторинг — ✅ (одна деталь до завершения)
 
@@ -71,11 +70,13 @@ Grafana — `:3000` на monitoring-ВМ, в docker; datasource и дашбор�
 Итог: логи access.log/error.log попадают в ES (индекс `filebeat-7.17.10-*`),
 Kibana показывает их в UI.
 
-- Kibana с логами (index pattern `filebeat-*`):
+Открывается UI; в Discover — index pattern `filebeat-*` (поле времени `@timestamp`)
+с access/error логами nginx с обеих ВМ:
 
 ![Kibana](kibana_logs.png)
 
-- Проверка ES кластера (green, 9k+ документов):
+- ES single-node, cluster green, реплики выставлены в 0 (корректно для 1 ноды),
+filebeat-индекс ~9.7k документов — вывод той самой ssh-команды:
 
 ![ES](es_health.png)
 
@@ -115,5 +116,7 @@ SSH-only вход в частную сеть: bastion (`178.154.232.162`, zone d
 Snapshot schedule `cw1-daily-snapshots` (Terraform, `fd8ilnfe5f94tutifka1`):
 cron `0 2 * * *` (ежедневно 02:00 UTC), retention 168h (7 дней),
 все три boot-диска (web-a, web-b, monitoring).
+
+Консоль: Compute Cloud → «Снимки» → вкладка «Расписания снимков» → `cw1-daily-snapshots`:
 
 ![Snapshot schedule](snapshot_schedule.png)
