@@ -79,10 +79,36 @@ Kibana показывает их в UI.
 
 ![ES](es_health.png)
 
-## 4. Сеть — 🚧 TODO
+## 4. Сеть — ✅
 
-Единый VPC (`default`), подсети zone e (192.168.110/24) и zone d (192.168.120/24), ALB публичный.
-TODO: Security Groups по портам сервисов + bastion-ВМ (SSH-only) — кнопка в конце сдачи.
+Единый VPC (`enp05kgo8tr10hq012cn`), подсети zone e (`192.168.110.0/24`) и zone d
+(`192.168.120.0/24`). Всё Тerraform: **4 Security Groups + bastion-ВМ**.
+
+### Security Groups (правило по порту каждого сервиса)
+
+| Группа | Inbound | Outbound |
+|---|---|---|
+| `sg-alb` | 80, 443 ← anyone | 80 → `sg-web` (healthchecks + бэенды) |
+| `sg-web` (обе web-ВМ) | 80 ← anyone; 22 ← `sg-bastion`; 9100/9113 (экспортеры) ← `sg-monitoring`; 9200 (ES) ← приватные подсети (filebeat); 5601 (Kibana) ← anyone | any |
+| `sg-monitoring` | 22 ← `sg-bastion`; 9090 (Prometheus), 3000 (Grafana) ← anyone | any |
+| `sg-bastion` | 22 ← anyone | any |
+
+### Bastion-ВМ
+
+SSH-only вход в частную сеть: bastion (`178.154.232.162`, zone d) — единственная
+машина с открытым 22 портом наружу; у всех остальных ВМ 22-порт разрешён
+только для `sg-bastion`. Ansible ходит через `ProxyJump` (см. `inventory.ini`).
+
+- bastion прямое подключение + его использования для jump'а:
+
+![bastion](bastion_ssh.png)
+
+### Проверки после добавления SG
+
+- ALB: 200 ×3 через `51.250.9.248`; NLB fallback 200
+- Prometheus `up` = 4/4 (scrape-путь по SG-цепочке жив)
+- Kibana: 302 наружу, Grafana `/api/health` 200, ES cluster green
+- Ansible через bastion: все хосты `pong`
 
 ## 5. Резервное копирование — ✅
 

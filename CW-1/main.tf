@@ -57,6 +57,178 @@ resource "yandex_vpc_subnet" "subnet_b" {
   v4_cidr_blocks = ["192.168.120.0/24"]
 }
 
+# =============================================================================
+# ПУНКТ «СЕТЬ»: SECURITY GROUPS (файрвол по портам сервисов) + BASTION
+# =============================================================================
+
+# SG bastion: единственный SSH-вход снаружи (SSH-only ВМ)
+resource "yandex_vpc_security_group" "bastion" {
+  name       = "sg-bastion"
+  network_id = data.yandex_vpc_network.site_net.id
+
+  ingress {
+    description    = "SSH из интернета (задание: bastion-ВМ SSH-only)"
+    protocol       = "tcp"
+    port           = 22
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description    = "SSH к внутренним ВМ + любые исходящие"
+    protocol       = "any"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# SG мониторинг: Prometheus + Grafana
+resource "yandex_vpc_security_group" "monitoring" {
+  name       = "sg-monitoring"
+  network_id = data.yandex_vpc_network.site_net.id
+
+  ingress {
+    description       = "SSH только через bastion"
+    protocol          = "tcp"
+    port              = 22
+    security_group_id = yandex_vpc_security_group.bastion.id
+  }
+
+  ingress {
+    description    = "Prometheus UI/API"
+    protocol       = "tcp"
+    port           = 9090
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description    = "Grafana UI"
+    protocol       = "tcp"
+    port           = 3000
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description    = "scrape exporters, docker pulls и пр."
+    protocol       = "any"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# SG web: nginx-сайты, exporters, ES (filebeat внутри VPC), Kibana
+resource "yandex_vpc_security_group" "web" {
+  name       = "sg-web"
+  network_id = data.yandex_vpc_network.site_net.id
+
+  ingress {
+    description    = "HTTP: сайт от ALB (и NLB fallback — NLB без SG)"
+    protocol       = "tcp"
+    port           = 80
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description       = "SSH только через bastion"
+    protocol          = "tcp"
+    port              = 22
+    security_group_id = yandex_vpc_security_group.bastion.id
+  }
+
+  ingress {
+    description       = "Порт 9100 — Node Exporter ← Prometheus"
+    protocol          = "tcp"
+    port              = 9100
+    security_group_id = yandex_vpc_security_group.monitoring.id
+  }
+
+  ingress {
+    description       = "Порт 9113 — nginx-exporter ← Prometheus"
+    protocol          = "tcp"
+    port              = 9113
+    security_group_id = yandex_vpc_security_group.monitoring.id
+  }
+
+  ingress {
+    description    = "Порт 9200 — Elasticsearch ← filebeat с web-ВМ (обе приватные подсети)"
+    protocol       = "tcp"
+    port           = 9200
+    v4_cidr_blocks = ["192.168.110.0/24", "192.168.120.0/24"]
+  }
+
+  ingress {
+    description    = "Порт 5601 — Kibana UI"
+    protocol       = "tcp"
+    port           = 5601
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description    = "filebeat → ES, apt/docker pulls и пр."
+    protocol       = "any"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# SG ALB: слушает 80/443 снаружи, ходит к целям по 80
+resource "yandex_vpc_security_group" "alb" {
+  name       = "sg-alb"
+  network_id = data.yandex_vpc_network.site_net.id
+
+  ingress {
+    description    = "HTTP от пользователей"
+    protocol       = "tcp"
+    port           = 80
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description    = "HTTPS от пользователей (запас)"
+    protocol       = "tcp"
+    port           = 443
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description       = "Трафик к целевым ВМ (backend suite:80)"
+    protocol          = "tcp"
+    port              = 80
+    security_group_id = yandex_vpc_security_group.web.id
+  }
+}
+
+# Bastion-ВМ: SSH-only вход во все частные ВМ (Пункт «Сеть»)
+resource "yandex_compute_instance" "bastion" {
+  name        = "bastion"
+  platform_id = "standard-v3"
+  zone        = "ru-central1-d"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  resources {
+    cores         = 2
+    memory        = 2
+    core_fraction = 20
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = data.yandex_compute_image.ubuntu.id
+      size     = 8
+      type     = "network-ssd" # квота SSD в зоне d свободна
+    }
+  }
+
+  network_interface {
+    subnet_id          = yandex_vpc_subnet.subnet_b.id
+    nat                = true
+    security_group_ids = [yandex_vpc_security_group.bastion.id]
+  }
+
+  metadata = {
+    ssh-keys = "ubuntu:${file("~/.ssh/id_rsa.pub")}"
+  }
+}
+
 # 2. Виртуальные машины на базовой платформе standard-v1 (с ограничением vCPU 20%)
 data "yandex_compute_image" "ubuntu" {
   family = "ubuntu-2204-lts"
@@ -88,6 +260,7 @@ resource "yandex_compute_instance" "web_a" {
   network_interface {
     subnet_id = yandex_vpc_subnet.subnet_a.id
     nat       = true
+    security_group_ids = [yandex_vpc_security_group.web.id]
     # static-ip-web-a — после поднятия квоты:
     # nat_ip_address = yandex_vpc_address.web_a_ip.external_ipv4_address[0].address
   }
@@ -123,6 +296,7 @@ resource "yandex_compute_instance" "web_b" {
   network_interface {
     subnet_id = yandex_vpc_subnet.subnet_b.id
     nat       = true
+    security_group_ids = [yandex_vpc_security_group.web.id]
     nat_ip_address = yandex_vpc_address.web_b_ip.external_ipv4_address[0].address
   }
 
@@ -206,7 +380,7 @@ resource "yandex_compute_snapshot_schedule" "daily" {
     expression = "0 2 * * *" # cron: ежедневно в 02:00 UTC
   }
 
-  retention_period = "168h" # 7 дней
+  retention_period = "168h0m0s" # 7 дней
 
   disk_ids = [
     yandex_compute_instance.web_a.boot_disk.0.disk_id,
@@ -282,8 +456,9 @@ resource "yandex_alb_virtual_host" "alb_vhost" {
 
 # 4. Application Load Balancer: listener port 80 -> HTTP Router
 resource "yandex_alb_load_balancer" "web_alb" {
-  name       = "web-app-lb"
-  network_id = data.yandex_vpc_network.site_net.id
+  name               = "web-app-lb"
+  network_id         = data.yandex_vpc_network.site_net.id
+  security_group_ids = [yandex_vpc_security_group.alb.id]
 
   allocation_policy {
     location {
@@ -343,6 +518,7 @@ resource "yandex_compute_instance" "prometheus" {
   network_interface {
     subnet_id = yandex_vpc_subnet.subnet_a.id
     nat       = true # ПРИВАТНАЯ СЕТЬ: нет прямого доступа из интернета, временно да для ансибла
+    security_group_ids = [yandex_vpc_security_group.monitoring.id]
     # static-ip-monitoring — после поднятия квоты:
     # nat_ip_address = yandex_vpc_address.monitoring_ip.external_ipv4_address[0].address
   }
@@ -359,5 +535,9 @@ resource "yandex_compute_instance" "prometheus" {
 
 output "prometheus_public_ip" {
   value = yandex_compute_instance.prometheus.network_interface.0.nat_ip_address
+}
+
+output "bastion_public_ip" {
+  value = yandex_compute_instance.bastion.network_interface.0.nat_ip_address
 }
 
