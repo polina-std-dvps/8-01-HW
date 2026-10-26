@@ -8,3 +8,13 @@ crash.log
 
 # Локальные логи/временные
 *.log
+
+# Артефакты, нужные локально, но не для git:
+# .deb nginxlog-exporter остаётся на диске в files/, но не грузится в репо
+files/*.deb
+
+# Мусор ansible
+*.retry
+
+# Реликт первой итерации (плейбуки используют docker-compose-*.yml*)
+docker-compose.yml

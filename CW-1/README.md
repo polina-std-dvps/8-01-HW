@@ -55,8 +55,9 @@ Grafana — `:3000` на monitoring-ВМ, в docker; datasource и дашбор�
 - **Nginx Log Exporter** (helmich, v1.11.0): на обеих web-ВМ — парсит `access.log`,
 отдаёт `nginx_http_response_count_total` (rps по `instance`/`method`/`status`)
 и `nginx_http_response_size_bytes` (накопленные байты) на `:4040` — питают панели
-9–10 дашборда (req/s, avg размер ответа). .deb хранится в репо
-(`files/`) и раскатывается Ansible, т.к. GitHub из зоны e флюкает; юниту деба
+9–10 дашборда (req/s, avg размер ответа). .deb скачивается из GitHub-релиза
+(v1.11.0) и хранится локально в `files/` (в git не хостится), Ansible раскатывает
+его по ВМ, т.к. наружный доступ из зоны e нестабилен; юниту деба
 отдан drop-in override (группа `adm` — в юните срезаны capability root'а).
 
 ![Grafana](grafana_dashboards.png)
