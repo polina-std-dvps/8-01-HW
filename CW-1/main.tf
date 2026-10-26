@@ -197,10 +197,27 @@ output "balancer_public_ip" {
 }
 
 # =============================================================================
-# МОНИТОРИНГ: ВИРТУАЛЬНЫЕ МАШИНЫ
+# РЕЗЕРВНОЕ КОПИРОВАНИЕ: ежедневные снапшоты всех boot-дисков, TTL 7 дней
 # =============================================================================
+resource "yandex_compute_snapshot_schedule" "daily" {
+  name = "cw1-daily-snapshots"
+
+  schedule_policy {
+    expression = "0 2 * * *" # cron: ежедневно в 02:00 UTC
+  }
+
+  retention_period = "168h" # 7 дней
+
+  disk_ids = [
+    yandex_compute_instance.web_a.boot_disk.0.disk_id,
+    yandex_compute_instance.web_b.boot_disk.0.disk_id,
+    yandex_compute_instance.prometheus.boot_disk.0.disk_id,
+  ]
+}
 
 # =============================================================================
+# МОНИТОРИНГ: ВИРТУАЛЬНЫЕ МАШИНЫ
+# =============================================================================# =============================================================================
 # APPLICATION LOAD BALANCER (по заданию: Target Group -> Backend Group -> HTTP Router -> ALB)
 # =============================================================================
 

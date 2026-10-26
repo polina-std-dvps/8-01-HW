@@ -1,63 +1,54 @@
-- name: Install and configure Grafana on separate VM (per task requirement)
+# Grafana в docker (docker hub; apt/grafana.com из ВМ недоступны).
+# Provisioning (datasource + дашборды) монтируется volume'ом.
+- name: Deploy Grafana in docker on monitoring VM
   hosts: grafana_servers
   become: yes
+  vars:
+    grafana_dir: /opt/grafana
+    grafana_admin_user: admin
+    # TODO: сменить на нормальный пароль перед сдачей (тут плейсхолдер для морального теста)
+    grafana_admin_password: cw1-admin
 
   tasks:
-    - name: Install prerequisites
+    - name: Install Docker engine + compose v2
       apt:
-        name: [apt-transport-https, ca-certificates, curl, gnupg]
+        name: [docker.io, docker-compose-v2]
         state: present
         update_cache: yes
 
-    - name: Add Grafana GPG key
-      ansible.builtin.get_url:
-        url: https://apt.grafana.com/gpg.key
-        dest: /usr/share/keyrings/grafana.asc
-        mode: '0644'
-
-    - name: Add Grafana repository
-      copy:
-        dest: /etc/apt/sources.list.d/grafana.list
-        content: |
-          deb [signed-by=/usr/share/keyrings/grafana.asc] https://apt.grafana.com stable main
-
-    - name: Install Grafana
-      apt:
-        name: grafana
-        state: present
-        update_cache: yes
-
-    - name: Ensure grafana-server started and enabled
+    - name: Docker service started &enabled
       systemd:
-        name: grafana-server
+        name: docker
         state: started
         enabled: yes
 
-    - name: Prepare dashboards folder
+    - name: Prepare directories
       file:
-        path: /var/lib/grafana/dashboards
+        path: "{{ item }}"
         state: directory
-        owner: grafana
-        group: grafana
+        mode: '0755'
+      loop:
+        - "{{ grafana_dir }}/provisioning/datasources"
+        - "{{ grafana_dir }}/provisioning/dashboards"
+        - "{{ grafana_dir }}/dashboards"
 
-    # --- Автопровижининг datasource + дашбордов (без ручных тыков в UI) ---
     - name: Provision Prometheus datasource
       copy:
-        dest: /etc/grafana/provisioning/datasources/prometheus.yml
+        dest: "{{ grafana_dir }}/provisioning/datasources/prometheus.yml"
         content: |
           apiVersion: 1
           datasources:
             - name: Prometheus
+              uid: Prometheus
               type: prometheus
               access: proxy
               url: "http://{{ prometheus_host }}:9090"
               isDefault: true
         mode: '0644'
-      notify: Restart Grafana
 
     - name: Provision dashboards provider
       copy:
-        dest: /etc/grafana/provisioning/dashboards/provider.yml
+        dest: "{{ grafana_dir }}/provisioning/dashboards/provider.yml"
         content: |
           apiVersion: 1
           providers:
@@ -66,20 +57,30 @@
               options:
                 path: /var/lib/grafana/dashboards
         mode: '0644'
-      notify: Restart Grafana
 
-    - name: Upload dashboards (Utilization/Saturation/Errors + http metrics)
+    - name: Upload dashboards
       copy:
         src: "{{ item }}"
-        dest: /var/lib/grafana/dashboards/
-        owner: grafana
-        group: grafana
+        dest: "{{ grafana_dir }}/dashboards/"
         mode: '0644'
       loop: "{{ lookup('fileglob', 'dashboards/*.json', wantlist=True) }}"
-      notify: Restart Grafana
 
-  handlers:
-    - name: Restart Grafana
-      systemd:
-        name: grafana-server
-        state: restarted
+    - name: Push Grafana compose file
+      template:
+        src: ./docker-compose-grafana.yml.j2
+        dest: "{{ grafana_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: Start Grafana
+      community.docker.docker_compose_v2:
+        project_src: "{{ grafana_dir }}"
+        state: present
+
+    - name: Wait for Grafana health endpoint
+      uri:
+        url: http://localhost:3000/api/health
+        status_code: 200
+      register: gf_health
+      retries: 20
+      delay: 10
+      until: gf_health.status == 200

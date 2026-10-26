@@ -1,34 +1,34 @@
-- name: Configure Filebeat on RPM Web Servers
+# Filebeat на web-серверах, в docker (в репо Elastic 403 из зоны YC,
+# а docker уже поставлен на эти ВМ). Логи nginx монтируются внутрь
+# контейнера read-only, конфиг генерируется Ansible'ом.
+- name: Deploy Filebeat in docker on web servers
   hosts: web_servers
   become: yes
+  vars:
+    compose_dir: /opt/filebeat
+
   tasks:
-    - name: Install prerequisites for Elastic repo
+    - name: Install Docker engine + compose v2
       apt:
-        name: [apt-transport-https, ca-certificates, curl, gnupg]
+        name: [docker.io, docker-compose-v2, ca-certificates]
         state: present
         update_cache: yes
 
-    - name: Add Elastic GPG key
-      ansible.builtin.get_url:
-        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-        dest: /usr/share/keyrings/elastic.asc
-        mode: '0644'
+    - name: Docker service started & enabled
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
 
-    - name: Add Elastic 7.x repository
+    - name: Create compose directory
+      file:
+        path: "{{ compose_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Generate filebeat.yml (inputs = nginx access/error, output = по inventory)
       copy:
-        dest: /etc/apt/sources.list.d/elastic-7.x.list
-        content: |
-          deb [signed-by=/usr/share/keyrings/elastic.asc] https://artifacts.elastic.co/packages/7.x/apt stable main
-
-    - name: Install Filebeat
-      apt:
-        name: filebeat
-        state: present
-        update_cache: yes
-
-    - name: Configure Filebeat inputs and output
-      copy:
-        dest: /etc/filebeat/filebeat.yml
+        dest: "{{ compose_dir }}/filebeat.yml"
         content: |
           filebeat.inputs:
           - type: log
@@ -42,10 +42,23 @@
 
           processors:
             - add_host_metadata: ~
+        mode: '0644'
 
-    - name: Enable and start Filebeat service (systemd)
-      systemd:
-        name: filebeat
-        state: restarted
-        enabled: yes
+    - name: Push Filebeat compose file
+      template:
+        src: ./docker-compose-filebeat.yml.j2
+        dest: "{{ compose_dir }}/docker-compose.yml"
+        mode: '0644'
 
+    - name: Start Filebeat
+      community.docker.docker_compose_v2:
+        project_src: "{{ compose_dir }}"
+        state: present
+
+    - name: Verify filebeat container is Up
+      command: docker ps --filter name=filebeat
+      register: fb_ps
+      retries: 9
+      delay: 10
+      until: "'filebeat' in fb_ps.stdout and 'Up' in fb_ps.stdout"
+      changed_when: false

@@ -1,0 +1,20 @@
+# Стек логов: только Elasticsearch (на web-a, за nginx внутри той же ВМ).
+# 9200 слушает ВМ полностью — filebeat с web-серверов ходит внутри VPC.
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      # Экономный heap: ВМ 2 ГБ, вместе с nginx надо уложиться
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+volumes:
+  es_data:
+    driver: local

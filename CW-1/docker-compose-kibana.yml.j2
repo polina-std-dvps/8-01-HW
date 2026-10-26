@@ -1,0 +1,12 @@
+# Kibana на web-b. Elasticsearch НЕ рядом, а на web-a
+# ({{ elasticsearch_host }}) — подставляется Ansible'ом при деплое.
+services:
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.10
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://{{ elasticsearch_host }}:9200
+      - NODE_OPTIONS="--max-old-space-size=512"
+    ports:
+      - "5601:5601"
+    restart: unless-stopped
