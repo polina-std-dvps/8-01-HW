@@ -1,9 +1,8 @@
-# Контрольная работа — Terraform + Ansible (Яндекс.Облако)
+# Курсовая работа на профессии "DevOps-инженер с нуля" - Жихарева Полина
 
-**Автор:** Жихарева Полина
-**Папка:** `CW-1/`
+---
 
-## Архитектура
+### Архитектура
 
 - **ВМ web-server-a** (ru-central1-e) — nginx, Node Exporter, Nginx Log Exporter
 - **ВМ web-server-b** (ru-central1-d) — nginx, Node Exporter, Nginx Log Exporter, статический внешний IP
@@ -13,7 +12,9 @@
 Инфраструктура описана через Terraform (`main.tf`), настройка сервисов — через Ansible:
 `deploy.yml` (nginx+сайт), `monitoring.yml` (экспортеры+Prometheus), `logging.yml` (Filebeat).
 
-## 1. Инфраструктура и сайт — ✅
+---
+
+## 1. Инфраструктура и сайт — 
 
 - Создание ВМ через Terraform (Terraform output: IP всех машин, статический у web-b):
 
@@ -31,7 +32,7 @@
 
 ![curl -v через балансировщик](curl.png)
 
-### ALB-цепочка (по заданию) — ✅
+### ALB-цепочка:
 
 Цепочка целиком в Terraform (`main.tf`):
 `yandex_alb_target_group` (обе ВМ по внутренним IP) → `yandex_alb_backend_group`
@@ -42,10 +43,12 @@
 сайт «My Infrastructure Website» отдаётся с обеих ВМ (временный fallback-балансировщик
 NLB был удалён после проверки ALB; задание выполняется на ALB)
 
-## 2. Мониторинг — ✅
+--- 
+
+## 2. Мониторинг:
 
 Node Exporter + nginx-exporter (stub_status на 127.0.0.1:8080) на обеих web; Prometheus (`:9090`)
-собирает 4 таргета (внутренние IP, конфиг генерируется из inventory).
+собирает 6 таргетов (9100/9113/4040 с обеих web, конфиг генерируется из inventory).
 
 Grafana — `:3000` на monitoring-ВМ, в docker; datasource и дашборд
 (`dashboards/cw-utilization.json`) провижинятся Ansible'ом автоматически
@@ -62,10 +65,9 @@ Grafana — `:3000` на monitoring-ВМ, в docker; datasource и дашбор�
 
 ![Grafana](grafana_dashboards.png)
 
-## 3. Логи — ✅
+---
 
-**Распределение по ВМ (docker из-за дисковых квот Я.Клауд — отдельные ВМ под ES/Grafana
-не выделяются, но каждый сервис при этом на своей ВМ):**
+### 3. Логи 
 
 - **web-a**: nginx + Elasticsearch 7.17.10 (docker, heap 512M) — `:9200` внутри VPC
 - **web-b**: nginx + Kibana 7.17.10 (docker) — `:5601`
@@ -82,14 +84,16 @@ Kibana показывает их в UI.
 ![Kibana](kibana_logs.png)
 
 - ES single-node, cluster green, реплики выставлены в 0 (корректно для 1 ноды),
-filebeat-индекс ~9.7k документов — вывод той самой ssh-команды:
+filebeat-индекс ~9.7k документов — вывод ssh-команды:
 
 ![ES](es_health.png)
 
-## 4. Сеть — ✅
+---
+
+## 4. Сеть:
 
 Единый VPC (`enp05kgo8tr10hq012cn`), подсети zone e (`192.168.110.0/24`) и zone d
-(`192.168.120.0/24`). Всё Тerraform: **4 Security Groups + bastion-ВМ**.
+(`192.168.120.0/24`). Всё Terraform: **4 Security Groups + bastion-ВМ**.
 
 ### Security Groups (правило по порту каждого сервиса)
 
@@ -117,7 +121,9 @@ SSH-only вход в частную сеть: bastion (`178.154.232.162`, zone d
 - Kibana: 302 наружу, Grafana `/api/health` 200, ES cluster green
 - Ansible через bastion: все хосты `pong`
 
-## 5. Резервное копирование — ✅
+---
+
+## 5. Резервное копирование:
 
 Snapshot schedule `cw1-daily-snapshots` (Terraform, `fd8ilnfe5f94tutifka1`):
 cron `0 2 * * *` (ежедневно 02:00 UTC), retention 168h (7 дней),
