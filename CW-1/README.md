@@ -31,6 +31,17 @@
 
 ![curl -v через балансировщик](curl.png)
 
+### ALB-цепочка (по заданию) — ✅
+
+Цепочка целиком в Terraform (`main.tf`):
+`yandex_alb_target_group` (обе ВМ по внутренним IP) → `yandex_alb_backend_group`
+(backend `:80`, healthcheck `GET /`) → `yandex_alb_http_router` → `yandex_alb_virtual_host`
+→ `yandex_alb_load_balancer` (listener `:80`, type auto, 2 зоны).
+
+- Проверка через Application Load Balancer (`51.250.9.248`):
+
+![curl через ALB](alb_curl.png)
+
 ## 2. Мониторинг — 🚧 в процессе
 
 Экспортеры установлены (Node Exporter, nginx-exporter с stub_status на 127.0.0.1:8080), Prometheus собирает 4 таргета.
