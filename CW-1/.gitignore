@@ -1,0 +1,10 @@
+# Terraform: чувствительное и тяжёлое
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.plan
+crash.log
+
+# Локальные логи/временные
+*.log

@@ -1,0 +1,102 @@
+# 1. Настройка экспортеров на веб-серверах
+- name: Install Exporters on Web Servers
+  hosts: web_servers
+  become: yes
+  tasks:
+    - name: Kill unattended-upgrades lock if exists
+      shell: |
+        systemctl stop unattended-upgrades || true
+        killall apt apt-get dpkg 2>/dev/null || true
+        rm -f /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/lib/dpkg/lock
+        dpkg --configure -a
+      ignore_errors: yes
+
+    - name: Enable Nginx stub_status for Prometheus Exporter
+      copy:
+        dest: /etc/nginx/conf.d/status.conf
+        content: |
+          server {
+              listen 127.0.0.1:8080;
+              server_name localhost;
+              location /stub_status {
+                  stub_status on;
+                  allow 127.0.0.1;
+                  deny all;
+              }
+          }
+      notify: Restart Nginx
+
+    - name: Flush handlers to restart Nginx immediately
+      meta: flush_handlers
+
+    - name: Install Node Exporter and Nginx Exporter
+      apt:
+        name: 
+          - prometheus-node-exporter
+          - prometheus-nginx-exporter
+        state: latest
+        update_cache: no
+
+    - name: Ensure exporters are started and enabled
+      service:
+        name: "{{ item }}"
+        state: restarted # Меняем на restarted, чтобы применить настройки nginx stub_status
+        enabled: yes
+      loop:
+        - prometheus-node-exporter
+        - prometheus-nginx-exporter
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+# 2. Настройка Prometheus и Grafana на одном хосте
+
+- name: Install and Configure Prometheus & Grafana
+  hosts: monitoring_servers
+  become: yes
+  tasks:
+    - name: Install Prometheus from standard repo
+      apt:
+        name:
+          - prometheus
+        state: latest
+        update_cache: yes
+
+    - name: Configure Prometheus target hosts
+      copy:
+        dest: /etc/prometheus/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 15s
+
+          scrape_configs:
+            - job_name: 'node_exporter'
+              static_configs:
+                - targets:
+                  {% for h in groups['web_servers'] %}
+                  - "{{ hostvars[h]['internal_ip'] | default(hostvars[h]['ansible_host']) }}:9100"
+                  {% endfor %}
+
+            - job_name: 'nginx_exporter'
+              static_configs:
+                - targets:
+                  {% for h in groups['web_servers'] %}
+                  - "{{ hostvars[h]['internal_ip'] | default(hostvars[h]['ansible_host']) }}:9113"
+                  {% endfor %}
+      notify: Restart Prometheus
+
+    - name: Start and enable Prometheus
+      service:
+        name: prometheus
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Prometheus
+      service:
+        name: prometheus
+        state: restarted
+
