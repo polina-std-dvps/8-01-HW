@@ -2,6 +2,30 @@
   hosts: web_servers
   become: yes
   tasks:
+    - name: Install prerequisites for Elastic repo
+      apt:
+        name: [apt-transport-https, ca-certificates, curl, gnupg]
+        state: present
+        update_cache: yes
+
+    - name: Add Elastic GPG key
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        dest: /usr/share/keyrings/elastic.asc
+        mode: '0644'
+
+    - name: Add Elastic 7.x repository
+      copy:
+        dest: /etc/apt/sources.list.d/elastic-7.x.list
+        content: |
+          deb [signed-by=/usr/share/keyrings/elastic.asc] https://artifacts.elastic.co/packages/7.x/apt stable main
+
+    - name: Install Filebeat
+      apt:
+        name: filebeat
+        state: present
+        update_cache: yes
+
     - name: Configure Filebeat inputs and output
       copy:
         dest: /etc/filebeat/filebeat.yml

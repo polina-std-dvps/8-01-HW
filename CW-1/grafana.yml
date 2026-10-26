@@ -1,0 +1,85 @@
+- name: Install and configure Grafana on separate VM (per task requirement)
+  hosts: grafana_servers
+  become: yes
+
+  tasks:
+    - name: Install prerequisites
+      apt:
+        name: [apt-transport-https, ca-certificates, curl, gnupg]
+        state: present
+        update_cache: yes
+
+    - name: Add Grafana GPG key
+      ansible.builtin.get_url:
+        url: https://apt.grafana.com/gpg.key
+        dest: /usr/share/keyrings/grafana.asc
+        mode: '0644'
+
+    - name: Add Grafana repository
+      copy:
+        dest: /etc/apt/sources.list.d/grafana.list
+        content: |
+          deb [signed-by=/usr/share/keyrings/grafana.asc] https://apt.grafana.com stable main
+
+    - name: Install Grafana
+      apt:
+        name: grafana
+        state: present
+        update_cache: yes
+
+    - name: Ensure grafana-server started and enabled
+      systemd:
+        name: grafana-server
+        state: started
+        enabled: yes
+
+    - name: Prepare dashboards folder
+      file:
+        path: /var/lib/grafana/dashboards
+        state: directory
+        owner: grafana
+        group: grafana
+
+    # --- Автопровижининг datasource + дашбордов (без ручных тыков в UI) ---
+    - name: Provision Prometheus datasource
+      copy:
+        dest: /etc/grafana/provisioning/datasources/prometheus.yml
+        content: |
+          apiVersion: 1
+          datasources:
+            - name: Prometheus
+              type: prometheus
+              access: proxy
+              url: "http://{{ prometheus_host }}:9090"
+              isDefault: true
+        mode: '0644'
+      notify: Restart Grafana
+
+    - name: Provision dashboards provider
+      copy:
+        dest: /etc/grafana/provisioning/dashboards/provider.yml
+        content: |
+          apiVersion: 1
+          providers:
+            - name: default
+              type: file
+              options:
+                path: /var/lib/grafana/dashboards
+        mode: '0644'
+      notify: Restart Grafana
+
+    - name: Upload dashboards (Utilization/Saturation/Errors + http metrics)
+      copy:
+        src: "{{ item }}"
+        dest: /var/lib/grafana/dashboards/
+        owner: grafana
+        group: grafana
+        mode: '0644'
+      loop: "{{ lookup('fileglob', 'dashboards/*.json', wantlist=True) }}"
+      notify: Restart Grafana
+
+  handlers:
+    - name: Restart Grafana
+      systemd:
+        name: grafana-server
+        state: restarted
