@@ -8,6 +8,11 @@
     compose_dir: /opt/filebeat
 
   tasks:
+    - name: Remove stale Elastic apt repo (403 в зоне YC, ломает apt update)
+      file:
+        path: /etc/apt/sources.list.d/elastic-7.x.list
+        state: absent
+
     - name: Install Docker engine + compose v2
       apt:
         name: [docker.io, docker-compose-v2, ca-certificates]
@@ -61,4 +66,29 @@
       retries: 9
       delay: 10
       until: "'filebeat' in fb_ps.stdout and 'Up' in fb_ps.stdout"
+      changed_when: false
+
+    # ES у нас single-node: реплики некуда размещать -> зелёный кластер
+    - name: Ensure filebeat indices have 0 replicas (single-node ES)
+      uri:
+        url: "http://{{ elasticsearch_host }}:9200/_template/filebeat_unassigned"
+        method: PUT
+        status_code: [200, 201]
+        body_format: json
+        body:
+          index_patterns:
+            - "filebeat-*"
+          settings:
+            number_of_replicas: 0
+      changed_when: false
+
+    - name: Replicas=0 для уже созданных индексов
+      uri:
+        url: "http://{{ elasticsearch_host }}:9200/filebeat-*/_settings"
+        method: PUT
+        status_code: [200, 201]
+        body_format: json
+        body:
+          index:
+            number_of_replicas: 0
       changed_when: false
