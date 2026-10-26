@@ -147,6 +147,13 @@ resource "yandex_vpc_security_group" "web" {
   }
 
   ingress {
+    description       = "Порт 4040 — nginxlog-exporter (helmich) ← Prometheus"
+    protocol          = "tcp"
+    port              = 4040
+    security_group_id = yandex_vpc_security_group.monitoring.id
+  }
+
+  ingress {
     description    = "Порт 9200 — Elasticsearch ← filebeat с web-ВМ (обе приватные подсети)"
     protocol       = "tcp"
     port           = 9200

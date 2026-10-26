@@ -46,10 +46,86 @@
         - prometheus-node-exporter
         - prometheus-nginx-exporter
 
+    # ------------------------------------------------------------------
+    # Nginx Log Exporter (helmich) — парсит access.log и отдаёт
+    # http_response_count_total / http_response_size_bytes на :4040
+    # GitHub из зоны e флюкает (403/timeout), поэтому .deb живёт в репо
+    # (CW-1/files/) и раскатывается с контрольной точки Ansible
+    # ------------------------------------------------------------------
+    - name: Nginx Log Exporter — копируем .deb целиком (v1.11.0)
+      copy:
+        src: files/nginxlog-exporter_1.11.0_linux_amd64.deb
+        dest: /tmp/nginxlog-exporter.deb
+        mode: '0644'
+
+    - name: Nginx Log Exporter — устанавливаем пакет
+      apt:
+        deb: /tmp/nginxlog-exporter.deb
+        state: present
+
+    - name: Nginx Log Exporter — конфиг (namespace nginx → метрики nginx_http_response_*)
+      copy:
+        dest: /etc/prometheus-nginxlog-exporter.hcl
+        content: |
+          listen {
+            port = 4040
+          }
+
+          // формат — стандартный combined у nginx (access.log).
+          // Метрики: nginx_http_response_count_total (Counter),
+          // nginx_http_response_size_bytes (Counter накопленных байт)
+          namespace "nginx" {
+            source = {
+              files = [
+                "/var/log/nginx/access.log",
+              ]
+            }
+
+            // Ubuntu-nginx по умолчанию пишет combined БЕЗ x-forwarded-for:
+            // 192.168.1.1 - - [date] "GET / HTTP/1.1" 200 176 "-" "Envoy/HC"
+            format = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
+          }
+        mode: '0644'
+      notify: Restart nginxlog-exporter
+
+    - name: Nginx Log Exporter — каталог для drop-in override
+      file:
+        path: /etc/systemd/system/prometheus-nginxlog-exporter.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Nginx Log Exporter — override юнита (группа adm на чтение access.log)
+      copy:
+        dest: /etc/systemd/system/prometheus-nginxlog-exporter.service.d/override.conf
+        content: |
+          # деб-юнит режет capability root'а (CapabilityBoundingSet=),
+          # а access.log у nginx 640 www-data:adm — даём группу adm
+          [Service]
+          SupplementaryGroups=adm
+        mode: '0644'
+      notify: Restart nginxlog-exporter
+
+    - name: Nginx Log Exporter — сбрасываем failed-состояние юнита (после быстрых рестартов)
+      command: systemctl reset-failed prometheus-nginxlog-exporter
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Nginx Log Exporter — service started & enabled
+      systemd:
+        name: prometheus-nginxlog-exporter
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
   handlers:
     - name: Restart Nginx
       service:
         name: nginx
+        state: restarted
+
+    - name: Restart nginxlog-exporter
+      service:
+        name: prometheus-nginxlog-exporter
         state: restarted
 
 # 2. Настройка Prometheus и Grafana на одном хосте
@@ -85,6 +161,13 @@
                 - targets:
                   {% for h in groups['web_servers'] %}
                   - "{{ hostvars[h]['internal_ip'] | default(hostvars[h]['ansible_host']) }}:9113"
+                  {% endfor %}
+
+            - job_name: 'nginx_log_exporter'
+              static_configs:
+                - targets:
+                  {% for h in groups['web_servers'] %}
+                  - "{{ hostvars[h]['internal_ip'] | default(hostvars[h]['ansible_host']) }}:4040"
                   {% endfor %}
       notify: Restart Prometheus
 

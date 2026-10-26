@@ -41,7 +41,7 @@
 - Проверка через Application Load Balancer (`51.250.9.248`): 6 запросов, все `200 OK`
 (сайт «My Infrastructure Website» отдаётся с обеих ВМ; NLB fallback `46.243.210.252` — тоже 200, см. скрин ниже)
 
-## 2. Мониторинг — ✅ (одна деталь до завершения)
+## 2. Мониторинг — ✅
 
 Node Exporter + nginx-exporter (stub_status на 127.0.0.1:8080) на обеих web; Prometheus (`:9090`)
 собирает 4 таргета (внутренние IP, конфиг генерируется из inventory).
@@ -51,8 +51,12 @@ Grafana — `:3000` на monitoring-ВМ, в docker; datasource и дашбор�
 (панели: CPU/RAM/диски/сеть — Utilization/Saturation/Errors + `http_response_count_total`,
 `http_response_size_bytes`, thresholds прописаны).
 
-> TODO: по заданию нужен **Nginx Log Exporter** (helmich) для метрик `http_response_*` —
-> добавим в `monitoring.yml`, после чего панели 9-10 дашборда оживут.
+- **Nginx Log Exporter** (helmich, v1.11.0): на обеих web-ВМ — парсит `access.log`,
+отдаёт `nginx_http_response_count_total` (rps по `instance`/`method`/`status`)
+и `nginx_http_response_size_bytes` (накопленные байты) на `:4040` — питают панели
+9–10 дашборда (req/s, avg размер ответа). .deb хранится в репо
+(`files/`) и раскатывается Ansible, т.к. GitHub из зоны e флюкает; юниту деба
+отдан drop-in override (группа `adm` — в юните срезаны capability root'а).
 
 ![Grafana](grafana_dashboards.png)
 
