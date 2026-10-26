@@ -119,7 +119,7 @@ resource "yandex_vpc_security_group" "web" {
   network_id = data.yandex_vpc_network.site_net.id
 
   ingress {
-    description    = "HTTP: сайт от ALB (и NLB fallback — NLB без SG)"
+    description    = "HTTP: сайт от ALB"
     protocol       = "tcp"
     port           = 80
     v4_cidr_blocks = ["0.0.0.0/0"]
@@ -312,49 +312,8 @@ resource "yandex_compute_instance" "web_b" {
   }
 }
 
-# 3. Целевая группа (Target Group) для Сетевого балансировщика
-resource "yandex_lb_target_group" "web_tg" {
-  name = "web-target-group"
-
-  target {
-    subnet_id = yandex_vpc_subnet.subnet_a.id
-    address   = yandex_compute_instance.web_a.network_interface.0.ip_address
-  }
-
-  target {
-    subnet_id = yandex_vpc_subnet.subnet_b.id
-    address   = yandex_compute_instance.web_b.network_interface.0.ip_address
-  }
-}
-
-# 4. Сетевой балансировщик (Network Load Balancer) — создает моментально!
-resource "yandex_lb_network_load_balancer" "web_lb" {
-  name = "web-network-balancer"
-
-  listener {
-    name = "http-listener"
-    port = 80
-    external_address_spec {
-      ip_version = "ipv4"
-    }
-  }
-
-  attached_target_group {
-    target_group_id = yandex_lb_target_group.web_tg.id
-
-    healthcheck {
-      name                = "http-healthcheck"
-      interval            = 2
-      timeout             = 1
-      unhealthy_threshold = 2
-      healthy_threshold   = 2
-      http_options {
-        port = 80
-        path = "/"
-      }
-    }
-  }
-}
+# 3. Целевая группа и NLB удалены: по заданию сайт отдаёт Application Load
+# Balancer (выше в файле), fallback-балансировщик был временной страховкой.
 
 # Вывод IP-адресов для Ansible и проверки
 output "web_server_a_public_ip" {
@@ -371,10 +330,6 @@ output "web_server_b_private_ip" {
 
 output "web_server_b_public_ip" {
   value = yandex_compute_instance.web_b.network_interface.0.nat_ip_address
-}
-
-output "balancer_public_ip" {
-  value = [for l in yandex_lb_network_load_balancer.web_lb.listener : [for spec in l.external_address_spec : spec.address][0]][0]
 }
 
 # =============================================================================

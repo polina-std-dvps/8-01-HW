@@ -38,8 +38,9 @@
 (backend `:80`, healthcheck `GET /`) → `yandex_alb_http_router` → `yandex_alb_virtual_host`
 → `yandex_alb_load_balancer` (listener `:80`, type auto, 2 зоны).
 
-- Проверка через Application Load Balancer (`51.250.9.248`): 6 запросов, все `200 OK`
-(сайт «My Infrastructure Website» отдаётся с обеих ВМ; NLB fallback `46.243.210.252` — тоже 200, см. скрин ниже)
+- Проверка через Application Load Balancer (`51.250.9.248`): 6 запросов, все `200 OK` —
+сайт «My Infrastructure Website» отдаётся с обеих ВМ (временный fallback-балансировщик
+NLB был удалён после проверки ALB; задание выполняется на ALB)
 
 ## 2. Мониторинг — ✅
 
@@ -110,7 +111,7 @@ SSH-only вход в частную сеть: bastion (`178.154.232.162`, zone d
 
 ### Проверки после добавления SG
 
-- ALB: 200 ×3 через `51.250.9.248`; NLB fallback 200
+- ALB: 200 ×3 через `51.250.9.248`
 - Prometheus `up` = 4/4 (scrape-путь по SG-цепочке жив)
 - Kibana: 302 наружу, Grafana `/api/health` 200, ES cluster green
 - Ansible через bastion: все хосты `pong`
